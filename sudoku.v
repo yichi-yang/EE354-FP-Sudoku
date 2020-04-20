@@ -122,6 +122,7 @@ always @(posedge Clk, posedge Reset)
 					 	row <= rowPrev;
 						col <= colProv;
 					end
+				 assign sudoku[row][col] = OutputValue;
 	          end    
       endcase
     end 
