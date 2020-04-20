@@ -56,8 +56,7 @@ always @(posedge Clk, posedge Reset)
 	          begin
 			  	 int i, j;
 		         // state transitions in the control unit
-		         if (Start)
-		           state <= COMPUTE;
+		         state <= LOAD;
 		         // RTL operations in the Data Path 
 		           for (int i = 0; i <= 8; i <= i + 1)
 					begin 
