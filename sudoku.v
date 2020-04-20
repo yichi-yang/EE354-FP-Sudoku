@@ -89,16 +89,33 @@ always @(posedge Clk, posedge Reset)
 
   begin  : CU_n_DU
     if (Reset)
-        begin
-            state <= INITIAL;
-	        X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
-	        Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
-	        Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
+       begin
+          state <= INIT;
+	      X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
+	      Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
+	      Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
        end
     else
         begin
             (* full_case, parallel_case *)
             case (state)
+            	INIT: 
+	                begin: INIT_STATE
+			  	        integer i, j;
+		                // state transitions in the control unit
+		                state <= LOAD;
+		                // RTL operations in the Data Path 
+                        col <= 0;
+                        row <= 0;
+		                for (i = 0; i <= 8; i <= i + 1)
+					        begin 
+						        for (j = 0; j <= 8; j <= j + 1)
+							        begin
+                                        sudoku[i][j] <= 0;
+                                        fixed[i][j] <= 0;
+							        end
+					        end
+	                end
                 LOAD:
                     begin
                         // state transition
@@ -126,6 +143,19 @@ always @(posedge Clk, posedge Reset)
                                 Col <= 0;
                             end
                     end
+                DISP:
+	                begin  
+                        if (Next)
+                            begin
+                                row <= rowNext;
+                                col <= colNext;
+                            end
+                        if (Prev)
+                            begin 
+                                row <= rowPrev;
+                                col <= colProv;
+                            end
+	                end
         endcase
     end 
   end
