@@ -13,18 +13,18 @@
 //			  if (SCEN)  // Notice SCEN
 //	           begin
 // ------------------------------------------------------------------------
-module SudokuSolver (Prev, Next, Enter, Start, Clk, InputValue,
-                    Init, Load, Next, ValRow, ValCol, ValBlk, Back, Disp, Fail,
+module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
+                    Init, Load, Forword, ValRow, ValCol, ValBlk, Back, Disp, Fail,
                     Row, Col, OutputValue);
 
-input Prev, Next, Enter, Start, CLk;
+input Prev, Next, Enter, Start, CLk, Reset;
 input [3:0] InputValue;
-output Init, Load, Next, ValRow, ValCol, ValBlk, Back, Disp, Fail;
+output Init, Load, Forword, ValRow, ValCol, ValBlk, Back, Disp, Fail;
 output [3:0] Row, Col;
 output [3:0] OutputValue;
 
 reg [10:0] state;
-reg [3:0] Row, Col;
+reg [3:0] Row, Col, rowNext, colNext, rowPrev, colPrev;
 
 reg [8:0] sudoku [8:0][8:0];
 reg fixed [8:0][8:0];
@@ -32,7 +32,7 @@ reg fixed [8:0][8:0];
 localparam
 INIT    = 9'b000000001,
 LOAD    = 9'b000000010,
-NEXT    = 9'b000000100,
+FORWORD = 9'b000000100,
 VAL_ROW = 9'b000001000,
 VAL_COL = 9'b000010000,
 VAL_BLK = 9'b000100000,
@@ -40,54 +40,69 @@ BACK    = 9'b001000000,
 DISP    = 9'b010000000,
 FAIL    = 9'b100000000;
 
-assign {Fail, Disp, Back, ValBlk, ValCol, ValRow, Next, Load, Init} = state;
+assign {Fail, Disp, Back, ValBlk, ValCol, ValRow, Forword, Load, Init} = state;
+
+always @(Row, Col)
+    begin
+        if(Col == 8)
+            begin
+                colNext <= 0;
+                if(Row != 8)
+                    rowNext <= Row + 1;
+            end
+        else
+            begin
+                colNext <= Col + 1;
+            end
+        if(Col == 0)
+            begin
+                colPrev <= 8;
+                if(Row != 0)
+                    rowPrev <= Row - 1;
+            end
+        else
+            begin
+                colPrev <= Col - 1;
+            end
+    end
 
 always @(posedge Clk, posedge Reset) 
 
   begin  : CU_n_DU
     if (Reset)
-       begin
-        	state <= INITIAL;
-	      X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
-	      Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
-	      Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
+        begin
+            state <= INITIAL;
+	        X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
+	        Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
+	        Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
        end
     else
-       begin
-         (* full_case, parallel_case *)
-         case (state)
-	        INITIAL	: 
-	          begin
-		         // state transitions in the control unit
-		         if (Start)
-		           state <= COMPUTE;
-		         // RTL operations in the Data Path 
-		           X <= Xin;
-		           Y <= Yin;
-		           Quotient <= 0;
-	          end
-	        COMPUTE	:
-			  if (SCEN)  // Notice SCEN
-	          begin
-		         // state transitions in the control unit
-		         if (X < Y)
-		           state <= DONE_S;
-		         // RTL operations in the Data Path 
-		         if (!(X < Y))
-		           begin
-		             X <= X - Y;
-		             Quotient <= Quotient + 1;
-		           end
- 	          end
-	        DONE_S	:
-	          begin  
-		         // state transitions in the control unit
-		         if (Ack)
-		           state <= INITIAL;
-		         // RTL operations in the Data Path 
-		         // In DONE_S state, there are no RTL operations in the Data Path 
-	          end    
-      endcase
+        begin
+            (* full_case, parallel_case *)
+            case (state)
+                LOAD:
+                    begin
+                        // state transition
+                        if(Start)
+                            state <= NEXT;
+                        // DPU
+                        if(Next)
+                            begin
+                                Row <= rowNext;
+                                Col <= colNext;
+                            end
+                        if(Prev)
+                            begin
+                                Row <= rowPrev;
+                                Col <= colPrev;
+                            end
+                        if(Enter)
+                            begin
+                                sudoku[Row][Col] <= InputValue;
+                                fixed[Row][Col] <= (InputValue == 4'b0);
+                            end
+                    end
+        endcase
     end 
   end
 
