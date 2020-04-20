@@ -54,13 +54,21 @@ always @(posedge Clk, posedge Reset)
          case (state)
 	        INITIAL	: 
 	          begin
+			  	 int i, j;
 		         // state transitions in the control unit
 		         if (Start)
 		           state <= COMPUTE;
 		         // RTL operations in the Data Path 
-		           X <= Xin;
-		           Y <= Yin;
-		           Quotient <= 0;
+		           for (int i = 0; i <= 8; i <= i + 1)
+					begin 
+						for (int j = 0; j <= 8; j <= j + 1)
+							begin
+								sudoku[i][j] <= 0;
+								fixed[i][j] <= 0;
+								col <= 0;
+								row <= 0;
+							end
+					end
 	          end
 	        COMPUTE	:
 			  if (SCEN)  // Notice SCEN
