@@ -72,9 +72,6 @@ always @(posedge Clk, posedge Reset)
     if (Reset)
        begin
           state <= INIT;
-	      X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
-	      Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
-	      Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
        end
     else
        begin
@@ -82,13 +79,13 @@ always @(posedge Clk, posedge Reset)
          case (state)
 	        INIT	: 
 	          begin
-			  	 int i, j;
+			  	 integer i, j;
 		         // state transitions in the control unit
 		         state <= LOAD;
 		         // RTL operations in the Data Path 
-		           for (int i = 0; i <= 8; i <= i + 1)
+		           for (integer i = 0; i <= 8; i <= i + 1)
 					begin 
-						for (int j = 0; j <= 8; j <= j + 1)
+						for (integer j = 0; j <= 8; j <= j + 1)
 							begin
 								sudoku[i][j] <= 0;
 								fixed[i][j] <= 0;
