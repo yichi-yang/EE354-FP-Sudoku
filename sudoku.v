@@ -13,25 +13,30 @@
 //			  if (SCEN)  // Notice SCEN
 //	           begin
 // ------------------------------------------------------------------------
-module divider (Xin, Yin, Start, Ack, Clk, Reset, SCEN,  // Notice SCEN
-				Done, Quotient, Remainder, Qi, Qc, Qd);
+module SudokuSolver (Prev, Next, Enter, Start, Clk, InputValue,
+                    Init, Load, Next, ValRow, ValCol, ValBlk, Back, Disp, Fail,
+                    Row, Col, OutputValue);
 
-input [3:0] Xin, Yin;
-input Start, Ack, Clk, Reset, SCEN; // Notice SCEN
-output Done;
-output [3:0] Quotient, Remainder;
-output Qi, Qc, Qd;
+input Prev, Next, Enter, Start, CLk;
+input [3:0] InputValue;
+output Init, Load, Next, ValRow, ValCol, ValBlk, Back, Disp, Fail;
+output [3:0] Row, Col;
+output [3:0] OutputValue;
 
-reg [3:0] Quotient;  // Remainder is a wire by default
-reg [3:0] X, Y;
-reg [2:0] state;
+reg [10:0] state;
 
 localparam
-INITIAL = 3'b001,
-COMPUTE	= 3'b010,
-DONE_S	= 3'b100;
+INIT    = 9'b000000001,
+LOAD    = 9'b000000010,
+NEXT    = 9'b000000100,
+VAL_ROW = 9'b000001000,
+VAL_COL = 9'b000010000,
+VAL_BLK = 9'b000100000,
+BACK    = 9'b001000000,
+DISP    = 9'b010000000,
+FAIL    = 9'b100000000;
 
-assign {Qd, Qc, Qi} = state;
+assign {Fail, Disp, Back, ValBlk, ValCol, ValRow, Next, Load, Init} = state;
 
 always @(posedge Clk, posedge Reset) 
 
@@ -81,8 +86,5 @@ always @(posedge Clk, posedge Reset)
       endcase
     end 
   end
- 
-assign Remainder = X;
-assign Done = (state == DONE_S) ;
 
-endmodule  // divider
+endmodule  // SudokuSolver
