@@ -1,7 +1,7 @@
 // ----------------------------------------------------------------------
-// 	A Verilog module for a simple divider
+//     A Verilog module for a simple divider
 //
-// 	Written by Gandhi Puvvada  Date: 7/17/98, 2/15/2008, 10/13/08, 2/22/2010
+//     Written by Gandhi Puvvada  Date: 7/17/98, 2/15/2008, 10/13/08, 2/22/2010
 //
 //      File name:  divider_combined_cu_dpu_with_single_step.v
 // ------------------------------------------------------------------------
@@ -9,9 +9,9 @@
 // the SCEN additional input port pin which is used to single step the divider
 // in the compute state.
 // Note the following lines later in the code:
-//  	        COMPUTE	:
-//			  if (SCEN)  // Notice SCEN
-//	           begin
+//              COMPUTE    :
+//              if (SCEN)  // Notice SCEN
+//               begin
 // ------------------------------------------------------------------------
 module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
                     Init, Load, Forword, ValRow, ValCol, ValBlk, Back, Disp, Fail,
@@ -70,35 +70,52 @@ always @(Row, Col)
     end
 
 always @ (InputValue) 
-	begin : HEX_TO_SSD
-		case (InputValue) 
-			4'b0001: inputOneHot = 9'b000000001; // 1
-			4'b0010: inputOneHot = 9'b000000010; // 2
-			4'b0011: inputOneHot = 9'b000000100; // 3
-			4'b0100: inputOneHot = 9'b000001000; // 4
-			4'b0101: inputOneHot = 9'b000010000; // 5
-			4'b0110: inputOneHot = 9'b000100000; // 6
-			4'b0111: inputOneHot = 9'b001000000; // 7
-			4'b1000: inputOneHot = 9'b010000000; // 8
-			4'b1001: inputOneHot = 9'b100000000; // 9  
-			default: inputOneHot = 9'b000000000; // default to 9'b0
-		endcase
-	end	
+    begin : HEX_TO_SSD
+        case (InputValue) 
+            4'b0001: inputOneHot = 9'b000000001; // 1
+            4'b0010: inputOneHot = 9'b000000010; // 2
+            4'b0011: inputOneHot = 9'b000000100; // 3
+            4'b0100: inputOneHot = 9'b000001000; // 4
+            4'b0101: inputOneHot = 9'b000010000; // 5
+            4'b0110: inputOneHot = 9'b000100000; // 6
+            4'b0111: inputOneHot = 9'b001000000; // 7
+            4'b1000: inputOneHot = 9'b010000000; // 8
+            4'b1001: inputOneHot = 9'b100000000; // 9  
+            default: inputOneHot = 9'b000000000; // default to 9'b0
+        endcase
+    end    
 
 always @(posedge Clk, posedge Reset) 
 
   begin  : CU_n_DU
     if (Reset)
-        begin
-            state <= INITIAL;
-	        X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
-	        Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
-	        Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
+       begin
+          state <= INIT;
+          X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
+          Y <= 4'bXXXX;       // to avoid recirculating mux controlled by Reset 
+          Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
        end
     else
         begin
             (* full_case, parallel_case *)
             case (state)
+                INIT: 
+                    begin: INIT_STATE
+                        integer i, j;
+                        // state transitions in the control unit
+                        state <= LOAD;
+                        // RTL operations in the Data Path 
+                        col <= 0;
+                        row <= 0;
+                        for (i = 0; i <= 8; i <= i + 1)
+                            begin 
+                                for (j = 0; j <= 8; j <= j + 1)
+                                    begin
+                                        sudoku[i][j] <= 0;
+                                        fixed[i][j] <= 0;
+                                    end
+                            end
+                    end
                 LOAD:
                     begin
                         // state transition
@@ -124,6 +141,19 @@ always @(posedge Clk, posedge Reset)
                             begin
                                 Row <= 0;
                                 Col <= 0;
+                            end
+                    end
+                DISP:
+                    begin  
+                        if (Next)
+                            begin
+                                row <= rowNext;
+                                col <= colNext;
+                            end
+                        if (Prev)
+                            begin 
+                                row <= rowPrev;
+                                col <= colProv;
                             end
                     end
         endcase
