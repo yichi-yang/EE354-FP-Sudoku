@@ -24,6 +24,10 @@ output [3:0] Row, Col;
 output [3:0] OutputValue;
 
 reg [10:0] state;
+reg [3:0] Row, Col;
+
+reg [8:0] sudoku [8:0][8:0];
+reg fixed [8:0][8:0];
 
 localparam
 INIT    = 9'b000000001,
