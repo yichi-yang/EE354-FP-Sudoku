@@ -43,7 +43,7 @@ always @(posedge Clk, posedge Reset)
   begin  : CU_n_DU
     if (Reset)
        begin
-        	state <= INITIAL;
+          state <= INITIAL;
 	      X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
 	      Y <= 4'bXXXX;	   // to avoid recirculating mux controlled by Reset 
 	      Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
