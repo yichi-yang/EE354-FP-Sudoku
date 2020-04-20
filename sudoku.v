@@ -110,13 +110,18 @@ always @(posedge Clk, posedge Reset)
 		             Quotient <= Quotient + 1;
 		           end
  	          end
-	        DONE_S	:
+	        DISP	:
 	          begin  
-		         // state transitions in the control unit
-		         if (Ack)
-		           state <= INITIAL;
-		         // RTL operations in the Data Path 
-		         // In DONE_S state, there are no RTL operations in the Data Path 
+		         if (Next)
+				 	begin
+					 	row <= rowNext;
+						col <= colNext;
+					end
+				 if (Prev)
+				 	begin 
+					 	row <= rowPrev;
+						col <= colProv;
+					end
 	          end    
       endcase
     end 
