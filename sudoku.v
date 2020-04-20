@@ -25,9 +25,11 @@ output [3:0] OutputValue;
 
 reg [10:0] state;
 reg [3:0] Row, Col, rowNext, colNext, rowPrev, colPrev;
+reg [8:0] inputOneHot;
 
 reg [8:0] sudoku [8:0][8:0];
 reg fixed [8:0][8:0];
+reg [8:0] attempt;
 
 localparam
 INIT    = 9'b000000001,
@@ -41,6 +43,7 @@ DISP    = 9'b010000000,
 FAIL    = 9'b100000000;
 
 assign {Fail, Disp, Back, ValBlk, ValCol, ValRow, Forword, Load, Init} = state;
+assign OutputValue = sudoku[Row][Col];
 
 always @(Row, Col)
     begin
@@ -65,6 +68,22 @@ always @(Row, Col)
                 colPrev <= Col - 1;
             end
     end
+
+always @ (InputValue) 
+	begin : HEX_TO_SSD
+		case (InputValue) 
+			4'b0001: inputOneHot = 9'b000000001; // 1
+			4'b0010: inputOneHot = 9'b000000010; // 2
+			4'b0011: inputOneHot = 9'b000000100; // 3
+			4'b0100: inputOneHot = 9'b000001000; // 4
+			4'b0101: inputOneHot = 9'b000010000; // 5
+			4'b0110: inputOneHot = 9'b000100000; // 6
+			4'b0111: inputOneHot = 9'b001000000; // 7
+			4'b1000: inputOneHot = 9'b010000000; // 8
+			4'b1001: inputOneHot = 9'b100000000; // 9  
+			default: inputOneHot = 9'b000000000; // default to 9'b0
+		endcase
+	end	
 
 always @(posedge Clk, posedge Reset) 
 
@@ -98,8 +117,13 @@ always @(posedge Clk, posedge Reset)
                             end
                         if(Enter)
                             begin
-                                sudoku[Row][Col] <= InputValue;
+                                sudoku[Row][Col] <= inputOneHot;
                                 fixed[Row][Col] <= (InputValue == 4'b0);
+                            end
+                        if(Start)
+                            begin
+                                Row <= 0;
+                                Col <= 0;
                             end
                     end
         endcase
