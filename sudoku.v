@@ -14,35 +14,33 @@
 //               begin
 // ------------------------------------------------------------------------
 module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
-                    Init, Load, Forword, ValRow, ValCol, ValBlk, Back, Disp, Fail,
+                    Init, Load, Forword, Check, Back, Disp, Fail,
                     Row, Col, OutputValue);
 
 input Prev, Next, Enter, Start, CLk, Reset;
 input [3:0] InputValue;
-output Init, Load, Forword, ValRow, ValCol, ValBlk, Back, Disp, Fail;
+output Init, Load, Forword, Check, Back, Disp, Fail;
 output [3:0] Row, Col;
 output [3:0] OutputValue;
 
-reg [10:0] state;
+reg [6:0] state;
 reg [3:0] Row, Col, rowNext, colNext, rowPrev, colPrev;
 reg [8:0] inputOneHot;
 
 reg [8:0] sudoku [8:0][8:0];
 reg fixed [8:0][8:0];
-reg [8:0] attempt;
+reg [8:0] attempt, nextAttempt;
 
 localparam
-INIT    = 9'b000000001,
-LOAD    = 9'b000000010,
-FORWORD = 9'b000000100,
-VAL_ROW = 9'b000001000,
-VAL_COL = 9'b000010000,
-VAL_BLK = 9'b000100000,
-BACK    = 9'b001000000,
-DISP    = 9'b010000000,
-FAIL    = 9'b100000000;
+INIT    = 7'b0000001,
+LOAD    = 7'b0000010,
+FORWORD = 7'b0000100,
+CHECK   = 7'b0001000,
+BACK    = 7'b0010000,
+DISP    = 7'b0100000,
+FAIL    = 7'b1000000;
 
-assign {Fail, Disp, Back, ValBlk, ValCol, ValRow, Forword, Load, Init} = state;
+assign {Fail, Disp, Back, Check, Forword, Load, Init} = state;
 assign OutputValue = sudoku[Row][Col];
 
 always @(Row, Col)
@@ -70,7 +68,7 @@ always @(Row, Col)
     end
 
 always @ (InputValue) 
-    begin : HEX_TO_SSD
+    begin : INPUT_TO_ONE_HOT
         case (InputValue) 
             4'b0001: inputOneHot = 9'b000000001; // 1
             4'b0010: inputOneHot = 9'b000000010; // 2
@@ -84,6 +82,21 @@ always @ (InputValue)
             default: inputOneHot = 9'b000000000; // default to 9'b0
         endcase
     end    
+
+always @ (attempt) 
+    begin : ONE_HOT_INCREMENTER
+        case (attempt) 
+            9'b000000001: nextAttempt = 9'b000000010; // 1 + 1 = 2
+            9'b000000010: nextAttempt = 9'b000000100; // 2 + 1 = 3
+            9'b000000100: nextAttempt = 9'b000001000; // 3 + 1 = 4
+            9'b000001000: nextAttempt = 9'b000010000; // 4 + 1 = 5
+            9'b000010000: nextAttempt = 9'b000100000; // 5 + 1 = 6
+            9'b000100000: nextAttempt = 9'b001000000; // 6 + 1 = 7
+            9'b001000000: nextAttempt = 9'b010000000; // 7 + 1 = 8
+            9'b010000000: nextAttempt = 9'b100000000; // 8 + 1 = 9
+            default:      nextAttempt = 9'bxxxxxxxxx;
+        endcase
+    end   
 
 always @(posedge Clk, posedge Reset) 
 
