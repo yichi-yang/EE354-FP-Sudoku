@@ -16,7 +16,7 @@ Date : Feb 15, 2008, 10/14/08, 2/22/2010, 2/12/2012, 2/17/2020
  ********************************************
  
 */
-module divider_top		(   
+module sudoku_top		(   
 		MemOE, MemWR, RamCS, QuadSpiFlashCS, // Disable the three memory chips
 
         ClkPort,                           // the 100 MHz incoming clock signal
@@ -24,7 +24,7 @@ module divider_top		(
 		BtnL, BtnU, BtnD, BtnR,            // L = Prev, R = Next, U = Enter, D = Start
 		BtnC,                              // the center button (this is our reset in most of our designs)
 		Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches
-		Ld15, Ld14, Ld13, Ld12, Ld11, Ld10, Ld9, Ld8, Ld7, Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 16 LEDs
+		Ld7, Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 16 LEDs
 		An3, An2, An1, An0,			       // 4 anodes
 		An7, An6, An5, An4,                // another 4 anodes (need turned off)
 		Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes
