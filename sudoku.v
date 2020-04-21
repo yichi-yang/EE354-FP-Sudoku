@@ -17,7 +17,7 @@ module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
                     Init, Load, Forward, Check, Back, Disp, Fail,
                     Row, Col, OutputValue, OutputAttempt);
 
-input Prev, Next, Enter, Start, CLk, Reset;
+input Prev, Next, Enter, Start, Clk, Reset;
 input [3:0] InputValue;
 output Init, Load, Forward, Check, Back, Disp, Fail;
 output [3:0] Row, Col;
@@ -136,9 +136,6 @@ always @(posedge Clk, posedge Reset)
     if (Reset)
        begin
           state <= INIT;
-          X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
-          Y <= 4'bXXXX;       // to avoid recirculating mux controlled by Reset 
-          Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
        end
     else
         begin
