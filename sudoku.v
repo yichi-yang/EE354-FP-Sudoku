@@ -228,18 +228,16 @@ always @(posedge Clk, posedge Reset)
                             blockColStart = 3;
                         else
                             blockColStart = 6;
-                        for(i = 0; i < 9; i = i + 1)
-                            begin
-                                accumulator = accumulator | sudoku[Row][i];
-                                accumulator = accumulator | sudoku[i][Col];
-                            end
-                        for(i = blockRowStart; i < blockRowStart + 3; i = i + 1)
-                            begin
-                                for(j = blockColStart; j < blockColStart + 3; j = j + 1)
-                                    begin
-                                        accumulator = accumulator | sudoku[i][j];
-                                    end
-                            end
+                        accumulator = accumulator
+                                    | sudoku[blockRowStart][blockColStart]
+                                    | sudoku[blockRowStart][blockColStart + 1]
+                                    | sudoku[blockRowStart][blockColStart + 2]
+                                    | sudoku[blockRowStart + 1][blockColStart]
+                                    | sudoku[blockRowStart + 1][blockColStart + 1]
+                                    | sudoku[blockRowStart + 1][blockColStart + 2]
+                                    | sudoku[blockRowStart + 2][blockColStart]
+                                    | sudoku[blockRowStart + 2][blockColStart + 1]
+                                    | sudoku[blockRowStart + 2][blockColStart + 2];
                         isValid = accumulator & attempt == 9'b0;
                         // state transition
                         if(isValid)
