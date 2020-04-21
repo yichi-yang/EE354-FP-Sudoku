@@ -221,126 +221,133 @@ always @(posedge Clk, posedge Reset)
 
                 FORWARD:
                     begin
-                        if(!Single || Enter)
+                        // state transition
+                        if(fixed[Row][Col] == 1'b0 && fixed[Row][Col] == 1'b0)
+                            state <= CHECK;
+                        if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
+                            state <= DISP;
+                        // DPU
+                        if(fixed[Row][Col] == 1'b1)
                             begin
-                                // state transition
-                                if(fixed[Row][Col] == 1'b0 && fixed[Row][Col] == 1'b0)
-                                    state <= CHECK;
-                                if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
-                                    state <= DISP;
-                                // DPU
-                                if(fixed[Row][Col] == 1'b1)
-                                    begin
-                                        Row <= rowNext;
-                                        Col <= colNext;
-                                    end
-                                else
-                                    attempt <= 9'b000000001;
-                                if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
-                                    begin
-                                        Row <= 0;
-                                        Col <= 0;
-                                    end
+                                Row <= rowNext;
+                                Col <= colNext;
+                            end
+                        else
+                            attempt <= 9'b000000001;
+                        if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
+                            begin
+                                Row <= 0;
+                                Col <= 0;
                             end
                     end
 
                 CHECK:
-                    begin
-                        if(!Single || Enter)
-                            begin: VALIDATE_ATTEMPT
-                                reg isValid;
-                                reg [3:0] i, j;
-                                reg [8:0] rowMask, colMask;
-                                isValid = 1'b1;
-                                for(i = 0; i < 9; i = i + 1)
+                    begin: VALIDATE_ATTEMPT
+                        reg isValid;
+                        reg [3:0] i, j;
+                        reg [8:0] rowMask, colMask;
+                        isValid = 1'b1;
+                        for(i = 0; i < 9; i = i + 1)
+                            begin
+                                if(sudoku[Row][i] & attempt || sudoku[i][Col] & attempt)
+                                    isValid = 1'b0;
+                            end
+
+                        if(Row < 3)
+                            rowMask = 9'b000000111;
+                        else if(Row < 6)
+                            rowMask = 9'b000111000;
+                        else
+                            rowMask = 9'b111000000;
+
+                        if(Col < 3)
+                            colMask = 9'b000000111;
+                        else if(Col < 6)
+                            colMask = 9'b000111000;
+                        else
+                            colMask = 9'b111000000;
+
+                        for(i = 0; i < 9; i = i + 1)
+                            begin
+                                for(j = 0; j < 9; j = j + 1)
                                     begin
-                                        if(sudoku[Row][i] & attempt || sudoku[i][Col] & attempt)
+                                        if(rowMask[i] && colMask[j] && (sudoku[i][j] & attempt))
                                             isValid = 1'b0;
                                     end
+                            end                                
 
-                                if(Row < 3)
-                                    rowMask = 9'b000000111;
-                                else if(Row < 6)
-                                    rowMask = 9'b000111000;
-                                else
-                                    rowMask = 9'b111000000;
-
-                                if(Col < 3)
-                                    colMask = 9'b000000111;
-                                else if(Col < 6)
-                                    colMask = 9'b000111000;
-                                else
-                                    colMask = 9'b111000000;
-
-                                for(i = 0; i < 9; i = i + 1)
-                                    begin
-                                        for(j = 0; j < 9; j = j + 1)
-                                            begin
-                                                if(rowMask[i] && colMask[j] && (sudoku[i][j] & attempt))
-                                                    isValid = 1'b0;
-                                            end
-                                    end                                
-
-                                // state transition
-                                if(isValid)
+                        // state transition
+                        if(!Single || Enter)
+                            begin
+                                if(isValid && !(Row == 8 && Col == 8))
                                     state <= FORWARD;
-                                if(!isValid && attempt[8]) // last attempt
-                                    begin
-                                        if(Row == 0 && Col == 0) // cannot go back anymore
-                                            state <= FAIL;
-                                        else
-                                            state <= BACK;
-                                    end
-                                // DPU
-                                if(isValid)
+                                if(isValid && Row == 8 && Col == 8)
+                                    state <= DISP;
+                            end
+                        
+
+                        if(!isValid && attempt[8]) // last attempt
+                            begin
+                                if(Row == 0 && Col == 0) // cannot go back anymore
+                                    state <= FAIL;
+                                else
+                                    state <= BACK;
+                            end
+                        // DPU
+                        if(!Single || Enter)
+                            begin
+                                if(isValid && !(Row == 8 && Col == 8))
                                     begin
                                         sudoku[Row][Col] <= attempt;
                                         Row <= rowNext;
                                         Col <= colNext;
                                     end
-                                if(!isValid && attempt[8]) // prepare for back track
+                                if(isValid && Row == 8 && Col == 8)
                                     begin
-                                        Row <= rowPrev;
-                                        Col <= colPrev;
-                                        attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
+                                        Row <= 0;
+                                        Col <= 0 ;
                                     end
-                                if(!isValid && !attempt[8]) // try next number
-                                    attempt <= nextAttempt;
                             end
+
+                        if(!isValid && attempt[8]) // prepare for back track
+                            begin
+                                Row <= rowPrev;
+                                Col <= colPrev;
+                                attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
+                            end
+                        if(!isValid && !attempt[8]) // try next number
+                            attempt <= nextAttempt;
                     end
 
                 BACK:
-                    begin
-                        if(!Single || Enter) 
-                            begin: BACKTRACK
-                                reg usable;
+                    begin: BACKTRACK
+                        reg usable;
 
-                                // we can update a location if it is not fixed and its value is not 9
-                                if(fixed[Row][Col] == 1'b0 && sudoku[Row][Col] != 9'b100000000)
-                                    usable = 1'b1;
-                                else
-                                    usable = 1'b0;
+                        // we can update a location if it is not fixed and its value is not 9
+                        if(fixed[Row][Col] == 1'b0 && sudoku[Row][Col] != 9'b100000000)
+                            usable = 1'b1;
+                        else
+                            usable = 1'b0;
 
-                                // state transition
-                                if(usable) // if not fixed and currently not at 9
-                                    state <= CHECK;
+                        // state transition
+                        if(usable) // if not fixed and currently not at 9
+                            state <= CHECK;
 
-                                // if at first location and it is fixed or it has value 9 then there are no soltion
-                                if(Row == 0 && Col == 0 && !usable)
-                                    state <= FAIL;
+                        // if at first location and it is fixed or it has value 9 then there are no soltion
+                        if(Row == 0 && Col == 0 && !usable)
+                            state <= FAIL;
 
-                                // DPU
-                                sudoku[Row][Col] <= 9'b0;
-                                if(usable)
-                                    begin
-                                        attempt <= nextAttempt; // increment the attempt value by one
-                                    end
-                                else // we need to backtrack further
-                                    begin
-                                        Row <= rowPrev;
-                                        Col <= colPrev;
-                                        attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
-                                    end
+                        // DPU
+                        sudoku[Row][Col] <= 9'b0;
+                        if(usable)
+                            begin
+                                attempt <= nextAttempt; // increment the attempt value by one
+                            end
+                        else // we need to backtrack further
+                            begin
+                                Row <= rowPrev;
+                                Col <= colPrev;
+                                attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
                             end
                     end
 
