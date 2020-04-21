@@ -24,7 +24,7 @@ module sudoku_top		(
 		BtnL, BtnU, BtnD, BtnR,            // L = Prev, R = Next, U = Enter, D = Start
 		BtnC,                              // the center button (this is our reset in most of our designs)
 		Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches
-		Ld7, Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 16 LEDs
+		Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 7 LEDs
 		An3, An2, An1, An0,			       // 4 anodes
 		An7, An6, An5, An4,                // another 4 anodes (need turned off)
 		Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes
@@ -46,7 +46,7 @@ module sudoku_top		(
 	output 	MemOE, MemWR, RamCS, QuadSpiFlashCS;
 	// Project Specific Outputs
 	// LEDs
-	output 	Ld0, Ld1, Ld2, Ld3, Ld4, Ld5, Ld6, Ld7;
+	output 	Ld0, Ld1, Ld2, Ld3, Ld4, Ld5, Ld6;
 	// SSD Outputs
 	output 	Cg, Cf, Ce, Cd, Cc, Cb, Ca, Dp;
 	output 	An0, An1, An2, An3;	
