@@ -124,9 +124,9 @@ module sudoku_top		(
 ee201_debouncer #(.N_dc(25)) ee201_debouncer_1 
         (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), .SCEN(Enter), .MCEN( ), .CCEN( ));
 ee201_debouncer #(.N_dc(25)) ee201_debouncer_2
-        (.CLK(sys_clk), .RESET(Reset), .PB(BtnL), .DPB( ), .SCEN(Prev), .MCEN( ), .CCEN( ));
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnL), .DPB( ), .SCEN( ), .MCEN(Prev), .CCEN( ));
 ee201_debouncer #(.N_dc(25)) ee201_debouncer_3
-        (.CLK(sys_clk), .RESET(Reset), .PB(BtnR), .DPB( ), .SCEN(Next), .MCEN( ), .CCEN( ));
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnR), .DPB( ), .SCEN( ), .MCEN(Next), .CCEN( ));
 ee201_debouncer #(.N_dc(25)) ee201_debouncer_4
         (.CLK(sys_clk), .RESET(Reset), .PB(BtnD), .DPB( ), .SCEN(Start), .MCEN( ), .CCEN( ));
 							
