@@ -104,56 +104,182 @@ always @(posedge Clk, posedge Reset)
     if (Reset)
        begin
           state <= INIT;
+          X <= 4'bXXXX;        // to avoid recirculating mux controlled by Reset
+          Y <= 4'bXXXX;       // to avoid recirculating mux controlled by Reset 
+          Quotient <= 4'bXXXX; // to avoid recirculating mux controlled by Reset
        end
     else
-       begin
-         (* full_case, parallel_case *)
-         case (state)
-	        INIT	: 
-	          begin
-			  	 integer i, j;
-		         // state transitions in the control unit
-		         state <= LOAD;
-		         // RTL operations in the Data Path 
-		           for (integer i = 0; i <= 8; i <= i + 1)
-					begin 
-						for (integer j = 0; j <= 8; j <= j + 1)
-							begin
-								sudoku[i][j] <= 0;
-								fixed[i][j] <= 0;
-								col <= 0;
-								row <= 0;
-							end
-					end
-	          end
-	        COMPUTE	:
-			  if (SCEN)  // Notice SCEN
-	          begin
-		         // state transitions in the control unit
-		         if (X < Y)
-		           state <= DONE_S;
-		         // RTL operations in the Data Path 
-		         if (!(X < Y))
-		           begin
-		             X <= X - Y;
-		             Quotient <= Quotient + 1;
-		           end
- 	          end
-	        DISP	:
-	          begin  
-		         if (Next)
-				 	begin
-					 	row <= rowNext;
-						col <= colNext;
-					end
-				 if (Prev)
-				 	begin 
-					 	row <= rowPrev;
-						col <= colProv;
-					end
-				 assign sudoku[row][col] = OutputValue;
-	          end    
-      endcase
+        begin
+            (* full_case, parallel_case *)
+            case (state)
+
+                INIT: 
+                    begin: INIT_STATE
+                        integer i, j;
+                        // state transitions in the control unit
+                        state <= LOAD;
+                        // RTL operations in the Data Path 
+                        col <= 0;
+                        row <= 0;
+                        for (i = 0; i <= 8; i <= i + 1)
+                            begin 
+                                for (j = 0; j <= 8; j <= j + 1)
+                                    begin
+                                        sudoku[i][j] <= 0;
+                                        fixed[i][j] <= 0;
+                                    end
+                            end
+                    end
+
+                LOAD:
+                    begin
+                        // state transition
+                        if(Start)
+                            state <= NEXT;
+                        // DPU
+                        if(Next)
+                            begin
+                                Row <= rowNext;
+                                Col <= colNext;
+                            end
+                        if(Prev)
+                            begin
+                                Row <= rowPrev;
+                                Col <= colPrev;
+                            end
+                        if(Enter)
+                            begin
+                                sudoku[Row][Col] <= inputOneHot;
+                                fixed[Row][Col] <= (InputValue == 4'b0);
+                            end
+                        if(Start)
+                            begin
+                                Row <= 0;
+                                Col <= 0;
+                            end
+                    end
+
+                FORWORD:
+                    begin
+                        // state transition
+                        if(fixed[Row][Co] == 1'b0)
+                            state <= CHECK;
+                        if(fixed[Row][Co] == 1'b1 && Row == 8 && Col == 8)
+                            state <= DISP;
+                        // DPU
+                        if(fixed[Row][Co] == 1'b1)
+                            begin
+                                Row <= rowNext;
+                                Col <= colNext;
+                            end
+                        else
+                            attempt <= 9'b000000001;
+                        if(fixed[Row][Co] == 1'b1 && Row == 8 && Col == 8)
+                            begin
+                                Row <= 0;
+                                Col <= 0;
+                            end
+                    end
+
+                CHECK:
+                    begin: VALIDATE_ATTEMPT
+                        reg isValid;
+                        reg [3:0] i, j, blockRowStart, blockColStart;
+                        reg [8:0] accumulator;
+                        accumulator = 9'b0;
+                        if(Row < 3)
+                            blockRowStart = 0;
+                        else if(Row < 6)
+                            blockRowStart = 3;
+                        else
+                            blockRowStart = 6;
+                        if(Col < 3)
+                            blockColStart = 0;
+                        else if(Col < 6)
+                            blockColStart = 3;
+                        else
+                            blockColStart = 6;
+                        for(i = 0; i < 9; i = i + 1)
+                            begin
+                                accumulator = accumulator | sudoku[Row][i];
+                                accumulator = accumulator | sudoku[i][Col];
+                            end
+                        for(i = blockRowStart; i < blockRowStart + 3; i = i + 1)
+                            begin
+                                for(j = blockColStart; j < blockColStart + 3; j = j + 1)
+                                    begin
+                                        accumulator = accumulator | sudoku[i][j];
+                                    end
+                            end
+                        isValid = accumulator & attempt == 9'b0;
+                        // state transition
+                        if(isValid)
+                            state <= NEXT;
+                        if(!isValid && attempt[8]) // last attempt
+                            state <= BACK;
+                        // DPU
+                        if(isValid)
+                            begin
+                                sudoku[Row][Col] <= attempt;
+                                Row <= rowNext;
+                                Col <= colNext;
+                            end
+                        if(!isValid && attempt[8]) // prepare for back track
+                            begin
+                                Row <= rowPrev;
+                                Col <= colPrev;
+                                attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
+                            end
+                        if(!isValid && !attempt[8]) // try next number
+                            attempt <= nextAttempt;
+                    end
+
+                BACK:
+                    begin
+                        // state transition
+                        if(fixed[Row][Co] == 1'b0)
+                            state <= CHECK;
+                        if(fixed[Row][Co] == 1'b1 && Row == 0 && Col == 0)
+                            state <= FAIL;
+                        // DPU
+                        if(fixed[Row][Co] == 1'b1)
+                            begin
+                                Row <= rowPrev;
+                                Col <= colPrev;
+                                attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
+                            end
+                        else
+                            begin
+                                attempt <= nextAttempt; // increment the attempt value by one
+                                sudoku[Row][Col] <= 9'b0;
+                            end
+                    end
+
+                DISP:
+                    begin
+                        // state transition
+                        if(Start)
+                            state <= INIT;
+                        // DPU
+                        if (Next)
+                            begin
+                                row <= rowNext;
+                                col <= colNext;
+                            end
+                        if (Prev)
+                            begin 
+                                row <= rowPrev;
+                                col <= colProv;
+                            end
+                    end
+
+                FAIL:
+                    begin
+                        // state transition
+                        if(Start)
+                            state <= INIT;
+                    end
+        endcase
     end 
   end
 
