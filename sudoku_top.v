@@ -140,8 +140,7 @@ SudokuSolver sudoku_1(.Prev(Prev,) .Start(Start), .Next(Next), .Clk(sys_clk), .R
 //------------
 // OUTPUT: LEDS
 	
-	assign {Ld10, Ld9, Ld8, Ld7, Ld6, Ld5, Ld4} = {Init, Load, Forward, Check, Back, Disp, Fail};
-	assign {Ld3, Ld2, Ld1, Ld0} = {Start, BtnU, Ack, BtnD}; // We do not want to put SCEN in place of BtnU here as the Ld2 will be on for just 10ns!
+	assign {Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0} = {Init, Load, Forward, Check, Back, Disp, Fail};
 
 //------------
 // SSD (Seven Segment Display)
