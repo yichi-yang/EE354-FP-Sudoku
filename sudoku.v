@@ -164,7 +164,7 @@ always @(posedge Clk, posedge Reset)
                     begin
                         // state transition
                         if(Start)
-                            state <= NEXT;
+                            state <= FORWARD;
                         // DPU
                         if(Next)
                             begin
@@ -243,7 +243,7 @@ always @(posedge Clk, posedge Reset)
                         isValid = accumulator & attempt == 9'b0;
                         // state transition
                         if(isValid)
-                            state <= NEXT;
+                            state <= FORWARD;
                         if(!isValid && attempt[8]) // last attempt
                             state <= BACK;
                         // DPU
@@ -266,7 +266,7 @@ always @(posedge Clk, posedge Reset)
                 BACK:
                     begin
                         // state transition
-                        if(fixed[Row][l] == 1'b0)
+                        if(fixed[Row][Col] == 1'b0)
                             state <= CHECK;
                         if(fixed[Row][Col] == 1'b1 && Row == 0 && Col == 0)
                             state <= FAIL;
@@ -298,7 +298,7 @@ always @(posedge Clk, posedge Reset)
                         if (Prev)
                             begin 
                                 Row <= rowPrev;
-                                Col <= colProv;
+                                Col <= colPrev;
                             end
                     end
 
