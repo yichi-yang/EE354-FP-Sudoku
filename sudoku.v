@@ -14,12 +14,12 @@
 //               begin
 // ------------------------------------------------------------------------
 module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
-                    Init, Load, Forword, Check, Back, Disp, Fail,
+                    Init, Load, Forward, Check, Back, Disp, Fail,
                     Row, Col, OutputValue, OutputAttempt);
 
 input Prev, Next, Enter, Start, CLk, Reset;
 input [3:0] InputValue;
-output Init, Load, Forword, Check, Back, Disp, Fail;
+output Init, Load, Forward, Check, Back, Disp, Fail;
 output [3:0] Row, Col;
 output [3:0] OutputValue, OutputAttempt;
 
@@ -35,13 +35,13 @@ reg [8:0] attempt, nextAttempt;
 localparam
 INIT    = 7'b0000001,
 LOAD    = 7'b0000010,
-FORWORD = 7'b0000100,
+FORWARD = 7'b0000100,
 CHECK   = 7'b0001000,
 BACK    = 7'b0010000,
 DISP    = 7'b0100000,
 FAIL    = 7'b1000000;
 
-assign {Fail, Disp, Back, Check, Forword, Load, Init} = state;
+assign {Fail, Disp, Back, Check, Forward, Load, Init} = state;
 
 always @(Row, Col)
     begin
@@ -151,8 +151,8 @@ always @(posedge Clk, posedge Reset)
                         // state transitions in the control unit
                         state <= LOAD;
                         // RTL operations in the Data Path 
-                        col <= 0;
-                        row <= 0;
+                        Col <= 0;
+                        Row <= 0;
                         for (i = 0; i <= 8; i <= i + 1)
                             begin 
                                 for (j = 0; j <= 8; j <= j + 1)
@@ -191,22 +191,22 @@ always @(posedge Clk, posedge Reset)
                             end
                     end
 
-                FORWORD:
+                FORWARD:
                     begin
                         // state transition
-                        if(fixed[Row][Co] == 1'b0)
+                        if(fixed[Row][Col] == 1'b0)
                             state <= CHECK;
-                        if(fixed[Row][Co] == 1'b1 && Row == 8 && Col == 8)
+                        if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
                             state <= DISP;
                         // DPU
-                        if(fixed[Row][Co] == 1'b1)
+                        if(fixed[Row][Col] == 1'b1)
                             begin
                                 Row <= rowNext;
                                 Col <= colNext;
                             end
                         else
                             attempt <= 9'b000000001;
-                        if(fixed[Row][Co] == 1'b1 && Row == 8 && Col == 8)
+                        if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
                             begin
                                 Row <= 0;
                                 Col <= 0;
@@ -269,12 +269,12 @@ always @(posedge Clk, posedge Reset)
                 BACK:
                     begin
                         // state transition
-                        if(fixed[Row][Co] == 1'b0)
+                        if(fixed[Row][l] == 1'b0)
                             state <= CHECK;
-                        if(fixed[Row][Co] == 1'b1 && Row == 0 && Col == 0)
+                        if(fixed[Row][Col] == 1'b1 && Row == 0 && Col == 0)
                             state <= FAIL;
                         // DPU
-                        if(fixed[Row][Co] == 1'b1)
+                        if(fixed[Row][Col] == 1'b1)
                             begin
                                 Row <= rowPrev;
                                 Col <= colPrev;
@@ -295,13 +295,13 @@ always @(posedge Clk, posedge Reset)
                         // DPU
                         if (Next)
                             begin
-                                row <= rowNext;
-                                col <= colNext;
+                                Row <= rowNext;
+                                Col <= colNext;
                             end
                         if (Prev)
                             begin 
-                                row <= rowPrev;
-                                col <= colProv;
+                                Row <= rowPrev;
+                                Col <= colProv;
                             end
                     end
 
