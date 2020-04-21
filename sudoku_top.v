@@ -21,10 +21,10 @@ module divider_top		(
 
         ClkPort,                           // the 100 MHz incoming clock signal
 		
-		BtnL, BtnU, BtnD, BtnR,            // the Left, Up, Down, and the Right buttons 		BtnL, BtnR,
+		BtnL, BtnU, BtnD, BtnR,            // L = Prev, R = Next, U = Enter, D = Start
 		BtnC,                              // the center button (this is our reset in most of our designs)
 		Sw7, Sw6, Sw5, Sw4, Sw3, Sw2, Sw1, Sw0, // 8 switches
-		Ld7, Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 8 LEDs
+		Ld15, Ld14, Ld13, Ld12, Ld11, Ld10, Ld9, Ld8, Ld7, Ld6, Ld5, Ld4, Ld3, Ld2, Ld1, Ld0, // 16 LEDs
 		An3, An2, An1, An0,			       // 4 anodes
 		An7, An6, An5, An4,                // another 4 anodes (need turned off)
 		Ca, Cb, Cc, Cd, Ce, Cf, Cg,        // 7 cathodes
@@ -58,10 +58,12 @@ module divider_top		(
 	wire		board_clk, sys_clk;
 	wire [1:0] 	ssdscan_clk;
 	
-	wire [3:0] 	Xin, Yin;
-	wire [3:0] 	Quotient, Remainder;
-	wire 		Start, Ack;
-	wire 		Done, Qi, Qc, Qd;
+	wire Prev, Next, Enter, Start, Clk;
+	wire [3:0] InputValue;
+	wire Init, Load, Forword, Check, Back, Disp, Fail;
+	wire [3:0] Row, Col;
+	wire [3:0] OutputValue;
+
 
 // to produce divided clock
 	reg [26:0]	DIV_CLK;
@@ -114,26 +116,31 @@ module divider_top		(
 
 	//------------         
 
-	assign Xin = {Sw7, Sw6, Sw5, Sw4};
-	assign Yin = {Sw3, Sw2, Sw1, Sw0};
+	assign InputValue = {Sw3, Sw2, Sw1, Sw0};
 	
-	assign Start = BtnL; assign Ack = BtnR; // This was used in the divider_simple and also here
+	assign Start = BtnD; assign Ack = BtnR; // This was used in the divider_simple and also here
 	
 	// Unlike in the divider_simple, here we use one button BtnU to represent SCEN
 	// Instantiate the debouncer	// module ee201_debouncer(CLK, RESET, PB, DPB, SCEN, MCEN, CCEN);
 	// notice the "SCEN" is produced here and is sent into the divider core further below
 ee201_debouncer #(.N_dc(25)) ee201_debouncer_1 
-        (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), .SCEN(SCEN), .MCEN( ), .CCEN( ));
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnU), .DPB( ), .SCEN(Enter), .MCEN( ), .CCEN( ));
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_2
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnL), .DPB( ), .SCEN(Prev), .MCEN( ), .CCEN( ));
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_3
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnR), .DPB( ), .SCEN(Next), .MCEN( ), .CCEN( ));
+ee201_debouncer #(.N_dc(25)) ee201_debouncer_4
+        (.CLK(sys_clk), .RESET(Reset), .PB(BtnD), .DPB( ), .SCEN(Start), .MCEN( ), .CCEN( ));
 							
 						
 	// instantiate the core divider design. Note the .SCEN(SCEN)
-divider divider_1(.Xin(Xin), .Yin(Yin), .Start(Start), .Ack(Ack), .Clk(sys_clk), .Reset(Reset), 
-				.SCEN(SCEN), .Done(Done), .Quotient(Quotient), .Remainder(Remainder), .Qi(Qi), .Qc(Qc), .Qd(Qd) );
+SudokuSolver sudoku_1(.Prev(Prev,) .Start(Start), .Next(Next), .Clk(sys_clk), .Reset(Reset), .Enter(Enter)
+				.Row(Row), .Col(Col), .Init(Init), .Load(Load), .Forword(Forword), .Check(Check), .Back(Back), .Disp(Disp), .Fail(Fail);
 
 //------------
 // OUTPUT: LEDS
 	
-	assign {Ld7, Ld6, Ld5, Ld4} = {Qi, Qc, Qd, Done};
+	assign {Ld10, Ld9, Ld8, Ld7, Ld6, Ld5, Ld4} = {Init, Load, Forword, Check, Back, Disp, Fail};
 	assign {Ld3, Ld2, Ld1, Ld0} = {Start, BtnU, Ack, BtnD}; // We do not want to put SCEN in place of BtnU here as the Ld2 will be on for just 10ns!
 
 //------------
@@ -141,11 +148,10 @@ divider divider_1(.Xin(Xin), .Yin(Yin), .Start(Start), .Ack(Ack), .Clk(sys_clk),
 	// reg [3:0]	SSD;
 	// wire [3:0]	SSD3, SSD2, SSD1, SSD0;
 	
-	//SSDs display Xin, Yin, Quotient, and Reminder  
-	assign SSD3 = Xin;
-	assign SSD2 = Yin;
-	assign SSD1 = Quotient;
-	assign SSD0 = Remainder;
+	assign SSD3 = Row;
+	assign SSD2 = Col;
+	assign SSD1 = OutputValue;
+	assign SSD0 = InputValue;
 
 
 	// need a scan clk for the seven segment display 
