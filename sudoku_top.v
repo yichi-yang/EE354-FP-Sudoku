@@ -154,7 +154,7 @@ SudokuSolver sudoku_1(.Prev(Prev), .Start(Start), .Next(Next), .Clk(sys_clk), .R
     assign SSD3 = Row;
     assign SSD2 = Col;
     assign SSD1 = OutputValue;
-    assign SSD0 = Check ? OutputAttempt : (Forward || Back) ? OutputFixed : InputValue;
+    assign SSD0 = Check ? OutputAttempt : (Forward || Back || Disp) ? OutputFixed : InputValue;
 
 
     // need a scan clk for the seven segment display 

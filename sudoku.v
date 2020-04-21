@@ -296,9 +296,10 @@ always @(posedge Clk, posedge Reset)
                         // DPU
                         if(!Single || Enter)
                             begin
+                                if(isValid)
+                                    sudoku[Row][Col] <= attempt;
                                 if(isValid && !(Row == 8 && Col == 8))
                                     begin
-                                        sudoku[Row][Col] <= attempt;
                                         Row <= rowNext;
                                         Col <= colNext;
                                     end
@@ -338,7 +339,8 @@ always @(posedge Clk, posedge Reset)
                             state <= FAIL;
 
                         // DPU
-                        sudoku[Row][Col] <= 9'b0;
+                        if(fixed[Row][Col] == 1'b0)
+                            sudoku[Row][Col] <= 9'b0;
                         if(usable)
                             begin
                                 attempt <= nextAttempt; // increment the attempt value by one
