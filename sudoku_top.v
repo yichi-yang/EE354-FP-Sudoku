@@ -132,7 +132,7 @@ ee201_debouncer #(.N_dc(25)) ee201_debouncer_4
 							
 						
 	// instantiate the core divider design. Note the .SCEN(SCEN)
-SudokuSolver sudoku_1(.Prev(Prev), .Start(Start), .Next(Next), .Clk(sys_clk), .Reset(Reset), .Enter(Enter),
+SudokuSolver sudoku_1(.Prev(Prev), .Start(Start), .Next(Next), .Clk(sys_clk), .Reset(Reset), .Enter(Enter), .OutputValue(OutputValue), .InputValue(InputValue),
 				.Row(Row), .Col(Col), .Init(Init), .Load(Load), .Forward(Forward), .Check(Check), .Back(Back), .Disp(Disp), .Fail(Fail));
 
 //------------

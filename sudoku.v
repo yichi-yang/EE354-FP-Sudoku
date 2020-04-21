@@ -48,26 +48,28 @@ always @(Row, Col)
         if(Col == 8)
             begin
                 colNext <= 0;
-                if(Row != 8)
-                    rowNext <= Row + 1;
+                if(Row == 8)
+                    rowNext <= 0;
                 else
-                    rowNext <= Row;
+                    rowNext <= Row + 1;
             end
         else
             begin
                 colNext <= Col + 1;
+                rowNext <= Row;
             end
         if(Col == 0)
             begin
                 colPrev <= 8;
-                if(Row != 0)
-                    rowPrev <= Row - 1;
+                if(Row == 0)
+                    rowPrev <= 8;
                 else
-                    rowPrev <= Row;
+                    rowPrev <= Row - 1;
             end
         else
             begin
                 colPrev <= Col - 1;
+                rowPrev <= Row;
             end
     end
 
@@ -138,8 +140,28 @@ always @(posedge Clk, posedge Reset)
 
   begin  : CU_n_DU
     if (Reset)
-       begin
-          state <= INIT;
+       begin : RESET_STATE_MACHINE
+            reg [3:0] i, j;
+            state <= INIT;
+            Row <= 4'bxxxx;
+            Col <= 4'bxxxx;
+            rowNext <= 4'bxxxx;
+            colNext <= 4'bxxxx;
+            rowPrev <= 4'bxxxx;
+            colPrev <= 4'bxxxx;
+            OutputValue <= 4'bxxxx;
+            OutputAttempt <= 4'bxxxx;
+            inputOneHot <= 9'bxxxxxxxxx;
+            attempt <= 9'bxxxxxxxxx;
+            nextAttempt <= 9'bxxxxxxxxx;
+            for (i = 0; i <= 8; i = i + 1)
+                begin 
+                    for (j = 0; j <= 8; j = j + 1)
+                        begin
+                            sudoku[i][j] <= 9'bxxxxxxxxx;
+                            fixed[i][j] <= 1'bx;
+                        end
+                end
        end
     else
         begin
@@ -148,7 +170,7 @@ always @(posedge Clk, posedge Reset)
 
                 INIT: 
                     begin: INIT_STATE
-                        integer i, j;
+                        reg [3:0] i, j;
                         // state transitions in the control unit
                         state <= LOAD;
                         // RTL operations in the Data Path 
