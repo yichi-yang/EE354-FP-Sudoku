@@ -60,7 +60,7 @@ module divider_top		(
 	
 	wire Prev, Next, Enter, Start, Clk;
 	wire [3:0] InputValue;
-	wire Init, Load, Forword, Check, Back, Disp, Fail;
+	wire Init, Load, Forward, Check, Back, Disp, Fail;
 	wire [3:0] Row, Col;
 	wire [3:0] OutputValue;
 
@@ -135,12 +135,12 @@ ee201_debouncer #(.N_dc(25)) ee201_debouncer_4
 						
 	// instantiate the core divider design. Note the .SCEN(SCEN)
 SudokuSolver sudoku_1(.Prev(Prev,) .Start(Start), .Next(Next), .Clk(sys_clk), .Reset(Reset), .Enter(Enter)
-				.Row(Row), .Col(Col), .Init(Init), .Load(Load), .Forword(Forword), .Check(Check), .Back(Back), .Disp(Disp), .Fail(Fail);
+				.Row(Row), .Col(Col), .Init(Init), .Load(Load), .Forward(Forward), .Check(Check), .Back(Back), .Disp(Disp), .Fail(Fail);
 
 //------------
 // OUTPUT: LEDS
 	
-	assign {Ld10, Ld9, Ld8, Ld7, Ld6, Ld5, Ld4} = {Init, Load, Forword, Check, Back, Disp, Fail};
+	assign {Ld10, Ld9, Ld8, Ld7, Ld6, Ld5, Ld4} = {Init, Load, Forward, Check, Back, Disp, Fail};
 	assign {Ld3, Ld2, Ld1, Ld0} = {Start, BtnU, Ack, BtnD}; // We do not want to put SCEN in place of BtnU here as the Ld2 will be on for just 10ns!
 
 //------------
