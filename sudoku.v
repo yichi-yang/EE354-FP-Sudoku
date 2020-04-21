@@ -15,16 +15,17 @@
 // ------------------------------------------------------------------------
 module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
                     Init, Load, Forword, Check, Back, Disp, Fail,
-                    Row, Col, OutputValue);
+                    Row, Col, OutputValue, OutputAttempt);
 
 input Prev, Next, Enter, Start, CLk, Reset;
 input [3:0] InputValue;
 output Init, Load, Forword, Check, Back, Disp, Fail;
 output [3:0] Row, Col;
-output [3:0] OutputValue;
+output [3:0] OutputValue, OutputAttempt;
 
 reg [6:0] state;
 reg [3:0] Row, Col, rowNext, colNext, rowPrev, colPrev;
+reg [3:0] OutputValue, OutputAttempt;
 reg [8:0] inputOneHot;
 
 reg [8:0] sudoku [8:0][8:0];
@@ -41,7 +42,6 @@ DISP    = 7'b0100000,
 FAIL    = 7'b1000000;
 
 assign {Fail, Disp, Back, Check, Forword, Load, Init} = state;
-assign OutputValue = sudoku[Row][Col];
 
 always @(Row, Col)
     begin
@@ -81,7 +81,39 @@ always @ (InputValue)
             4'b1001: inputOneHot = 9'b100000000; // 9  
             default: inputOneHot = 9'b000000000; // default to 9'b0
         endcase
-    end    
+    end
+
+always @ (*)
+    begin
+        case (sudoku[Row][Col]) 
+            9'b000000001: OutputValue = 4'b0001; // 1
+            9'b000000010: OutputValue = 4'b0010; // 2
+            9'b000000100: OutputValue = 4'b0011; // 3
+            9'b000001000: OutputValue = 4'b0100; // 4
+            9'b000010000: OutputValue = 4'b0101; // 5
+            9'b000100000: OutputValue = 4'b0110; // 6
+            9'b001000000: OutputValue = 4'b0111; // 7
+            9'b010000000: OutputValue = 4'b1000; // 8
+            9'b100000000: OutputValue = 4'b1001; // 9  
+            default:      OutputValue = 4'b0000; // default to 4'b0
+        endcase
+    end
+
+always @ (attempt)
+    begin
+        case (attempt) 
+            9'b000000001: OutputAttempt = 4'b0001; // 1
+            9'b000000010: OutputAttempt = 4'b0010; // 2
+            9'b000000100: OutputAttempt = 4'b0011; // 3
+            9'b000001000: OutputAttempt = 4'b0100; // 4
+            9'b000010000: OutputAttempt = 4'b0101; // 5
+            9'b000100000: OutputAttempt = 4'b0110; // 6
+            9'b001000000: OutputAttempt = 4'b0111; // 7
+            9'b010000000: OutputAttempt = 4'b1000; // 8
+            9'b100000000: OutputAttempt = 4'b1001; // 9  
+            default:      OutputAttempt = 4'b0000; // default to 4'b0
+        endcase
+    end
 
 always @ (attempt) 
     begin : ONE_HOT_INCREMENTER
