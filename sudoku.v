@@ -150,9 +150,9 @@ always @(posedge Clk, posedge Reset)
                         // RTL operations in the Data Path 
                         Col <= 0;
                         Row <= 0;
-                        for (i = 0; i <= 8; i <= i + 1)
+                        for (i = 0; i <= 8; i = i + 1)
                             begin 
-                                for (j = 0; j <= 8; j <= j + 1)
+                                for (j = 0; j <= 8; j = j + 1)
                                     begin
                                         sudoku[i][j] <= 0;
                                         fixed[i][j] <= 0;
