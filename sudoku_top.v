@@ -118,8 +118,6 @@ module sudoku_top		(
 
 	assign InputValue = {Sw3, Sw2, Sw1, Sw0};
 	
-	assign Start = BtnD; assign Ack = BtnR; // This was used in the divider_simple and also here
-	
 	// Unlike in the divider_simple, here we use one button BtnU to represent SCEN
 	// Instantiate the debouncer	// module ee201_debouncer(CLK, RESET, PB, DPB, SCEN, MCEN, CCEN);
 	// notice the "SCEN" is produced here and is sent into the divider core further below

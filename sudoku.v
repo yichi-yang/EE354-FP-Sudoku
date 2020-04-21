@@ -50,6 +50,8 @@ always @(Row, Col)
                 colNext <= 0;
                 if(Row != 8)
                     rowNext <= Row + 1;
+                else
+                    rowNext <= Row;
             end
         else
             begin
@@ -60,6 +62,8 @@ always @(Row, Col)
                 colPrev <= 8;
                 if(Row != 0)
                     rowPrev <= Row - 1;
+                else
+                    rowPrev <= Row;
             end
         else
             begin
@@ -164,7 +168,7 @@ always @(posedge Clk, posedge Reset)
                     begin
                         // state transition
                         if(Start)
-                            state <= FORWARD;
+                            state <= DISP;
                         // DPU
                         if(Next)
                             begin
