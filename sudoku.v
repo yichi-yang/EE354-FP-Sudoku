@@ -15,13 +15,14 @@
 // ------------------------------------------------------------------------
 module SudokuSolver (Prev, Next, Enter, Start, Clk, Reset, InputValue,
                     Init, Load, Forward, Check, Back, Disp, Fail,
-                    Row, Col, OutputValue, OutputAttempt);
+                    Row, Col, OutputValue, OutputAttempt, Single, OutputFixed);
 
-input Prev, Next, Enter, Start, Clk, Reset;
+input Prev, Next, Enter, Start, Clk, Reset, Single;
 input [3:0] InputValue;
 output Init, Load, Forward, Check, Back, Disp, Fail;
 output [3:0] Row, Col;
 output [3:0] OutputValue, OutputAttempt;
+output OutputFixed;
 
 reg [6:0] state;
 reg [3:0] Row, Col, rowNext, colNext, rowPrev, colPrev;
@@ -42,6 +43,7 @@ DISP    = 7'b0100000,
 FAIL    = 7'b1000000;
 
 assign {Fail, Disp, Back, Check, Forward, Load, Init} = state;
+assign OutputFixed = fixed[Row][Col];
 
 always @(Row, Col)
     begin
@@ -134,7 +136,7 @@ always @ (attempt)
             9'b010000000: nextAttempt = 9'b100000000; // 8 + 1 = 9
             default:      nextAttempt = 9'bxxxxxxxxx;
         endcase
-    end   
+    end
 
 always @(posedge Clk, posedge Reset) 
 
@@ -190,7 +192,7 @@ always @(posedge Clk, posedge Reset)
                     begin
                         // state transition
                         if(Start)
-                            state <= DISP;
+                            state <= FORWARD;
                         // DPU
                         if(Next)
                             begin
@@ -205,7 +207,10 @@ always @(posedge Clk, posedge Reset)
                         if(Enter)
                             begin
                                 sudoku[Row][Col] <= inputOneHot;
-                                fixed[Row][Col] <= (InputValue == 4'b0);
+                                if(inputOneHot == 9'b0)
+                                    fixed[Row][Col] <= 1'b0;
+                                else
+                                    fixed[Row][Col] <= 1'b1;
                             end
                         if(Start)
                             begin
@@ -217,7 +222,7 @@ always @(posedge Clk, posedge Reset)
                 FORWARD:
                     begin
                         // state transition
-                        if(fixed[Row][Col] == 1'b0)
+                        if(fixed[Row][Col] == 1'b0 && fixed[Row][Col] == 1'b0)
                             state <= CHECK;
                         if(fixed[Row][Col] == 1'b1 && Row == 8 && Col == 8)
                             state <= DISP;
@@ -239,44 +244,71 @@ always @(posedge Clk, posedge Reset)
                 CHECK:
                     begin: VALIDATE_ATTEMPT
                         reg isValid;
-                        reg [3:0] i, j, blockRowStart, blockColStart;
-                        reg [8:0] accumulator;
-                        accumulator = 9'b0;
-                        if(Row < 3)
-                            blockRowStart = 0;
-                        else if(Row < 6)
-                            blockRowStart = 3;
-                        else
-                            blockRowStart = 6;
-                        if(Col < 3)
-                            blockColStart = 0;
-                        else if(Col < 6)
-                            blockColStart = 3;
-                        else
-                            blockColStart = 6;
-                        accumulator = accumulator
-                                    | sudoku[blockRowStart][blockColStart]
-                                    | sudoku[blockRowStart][blockColStart + 1]
-                                    | sudoku[blockRowStart][blockColStart + 2]
-                                    | sudoku[blockRowStart + 1][blockColStart]
-                                    | sudoku[blockRowStart + 1][blockColStart + 1]
-                                    | sudoku[blockRowStart + 1][blockColStart + 2]
-                                    | sudoku[blockRowStart + 2][blockColStart]
-                                    | sudoku[blockRowStart + 2][blockColStart + 1]
-                                    | sudoku[blockRowStart + 2][blockColStart + 2];
-                        isValid = accumulator & attempt == 9'b0;
-                        // state transition
-                        if(isValid)
-                            state <= FORWARD;
-                        if(!isValid && attempt[8]) // last attempt
-                            state <= BACK;
-                        // DPU
-                        if(isValid)
+                        reg [3:0] i, j;
+                        reg [8:0] rowMask, colMask;
+                        isValid = 1'b1;
+                        for(i = 0; i < 9; i = i + 1)
                             begin
-                                sudoku[Row][Col] <= attempt;
-                                Row <= rowNext;
-                                Col <= colNext;
+                                if(sudoku[Row][i] & attempt || sudoku[i][Col] & attempt)
+                                    isValid = 1'b0;
                             end
+
+                        if(Row < 3)
+                            rowMask = 9'b000000111;
+                        else if(Row < 6)
+                            rowMask = 9'b000111000;
+                        else
+                            rowMask = 9'b111000000;
+
+                        if(Col < 3)
+                            colMask = 9'b000000111;
+                        else if(Col < 6)
+                            colMask = 9'b000111000;
+                        else
+                            colMask = 9'b111000000;
+
+                        for(i = 0; i < 9; i = i + 1)
+                            begin
+                                for(j = 0; j < 9; j = j + 1)
+                                    begin
+                                        if(rowMask[i] && colMask[j] && (sudoku[i][j] & attempt))
+                                            isValid = 1'b0;
+                                    end
+                            end                                
+
+                        // state transition
+                        if(!Single || Enter)
+                            begin
+                                if(isValid && !(Row == 8 && Col == 8))
+                                    state <= FORWARD;
+                                if(isValid && Row == 8 && Col == 8)
+                                    state <= DISP;
+                            end
+                        
+
+                        if(!isValid && attempt[8]) // last attempt
+                            begin
+                                if(Row == 0 && Col == 0) // cannot go back anymore
+                                    state <= FAIL;
+                                else
+                                    state <= BACK;
+                            end
+                        // DPU
+                        if(!Single || Enter)
+                            begin
+                                if(isValid && !(Row == 8 && Col == 8))
+                                    begin
+                                        sudoku[Row][Col] <= attempt;
+                                        Row <= rowNext;
+                                        Col <= colNext;
+                                    end
+                                if(isValid && Row == 8 && Col == 8)
+                                    begin
+                                        Row <= 0;
+                                        Col <= 0 ;
+                                    end
+                            end
+
                         if(!isValid && attempt[8]) // prepare for back track
                             begin
                                 Row <= rowPrev;
@@ -288,23 +320,34 @@ always @(posedge Clk, posedge Reset)
                     end
 
                 BACK:
-                    begin
+                    begin: BACKTRACK
+                        reg usable;
+
+                        // we can update a location if it is not fixed and its value is not 9
+                        if(fixed[Row][Col] == 1'b0 && sudoku[Row][Col] != 9'b100000000)
+                            usable = 1'b1;
+                        else
+                            usable = 1'b0;
+
                         // state transition
-                        if(fixed[Row][Col] == 1'b0)
+                        if(usable) // if not fixed and currently not at 9
                             state <= CHECK;
-                        if(fixed[Row][Col] == 1'b1 && Row == 0 && Col == 0)
+
+                        // if at first location and it is fixed or it has value 9 then there are no soltion
+                        if(Row == 0 && Col == 0 && !usable)
                             state <= FAIL;
+
                         // DPU
-                        if(fixed[Row][Col] == 1'b1)
+                        sudoku[Row][Col] <= 9'b0;
+                        if(usable)
+                            begin
+                                attempt <= nextAttempt; // increment the attempt value by one
+                            end
+                        else // we need to backtrack further
                             begin
                                 Row <= rowPrev;
                                 Col <= colPrev;
                                 attempt <= sudoku[rowPrev][colPrev]; // load the value in previous location to increment
-                            end
-                        else
-                            begin
-                                attempt <= nextAttempt; // increment the attempt value by one
-                                sudoku[Row][Col] <= 9'b0;
                             end
                     end
 
